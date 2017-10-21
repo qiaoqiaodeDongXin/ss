@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>点击加号上传图片</title>
+		<style type="text/css">
+			body{
+				font-size: 13px;
+			}
+			#choose input{
+				display: none;
+			}
+			img{
+				width: 100px;
+				height: auto;
+			}
+			#upload input{
+				padding: 10px 20px;
+				border: none;
+				background-color: orange;
+				color: white;
+			}
+		</style>
+	</head>
+	<body>
+	    <!-- 注意: 一定的吧form的enctype  置为multipart/form-data-->
+		<form action="/index" method="post" enctype="multipart/form-data">
+			<!-- 处理选择图片这一块 -->
+			<div id="choose">
+				<img src="img/add.png"/>
+				<!-- autocomplete：自动完成 刷新页面是否自动填充上一次的值。两个取值 on/off -->
+				<!-- accept="image/*" 接受所有格式的图片，Chrome和Safari等Webkit浏览器下却出现了响应滞慢的问题
+					accept=”image/*”属性会对每一个文件都遍历一次所有的”image/*”文件类型，当文件较多时，文件的检验时间较长，这可能是Webkit的底层实现的bug。-->
+				<!-- multiple="multiple" 支持同时选中多个文件 -->
+				<input type="file" name="photo" accept="image/gif,image/jpeg,image/png"  autocomplete="off" />
+				<img src="img/add.png"/>
+				<input type="file" name="photo" accept="image/gif,image/jpeg,image/png" autocomplete="off" />
+				<img src="img/add.png"/>
+				<input type="file" name="photo" accept="image/gif,image/jpeg,image/png" autocomplete="off" />
+			</div>
+			<!-- 处理添加和上传 -->
+			<div id="upload">
+				<input type="button" value="添加" />
+				<input type="submit" value="上传" />
+			</div>
+		</form>
+	</body>
+</html>
+<script src="jQuery/jquery-3.2.1.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+	var count = 3;
+	// 使用代理给 img 添加事件（通过点击添加按钮添加的图片同样有点击事件）
+	$("#choose").on("click","img",function(){
+		$(this).next().click();
+	});
+	$("#choose").on("change","input",function(){
+		// console.log($(this)[0].files);
+		var file = this.files[0];
+		// 判断是否是一个图片
+		if (file.type.startsWith("image")) {
+			$(this).prev().attr("src",URL.createObjectURL(file));
+		}
+	});
+	// 点击添加按钮，添加多个 “+” 号。
+	$("input[type='button']").click(function(){
+		if (count >= 9) {
+			alert("以达到添加上线");
+			return;
+		}
+		$("#choose").append('<img src="img/add.png"/><input type="file" name="photo" accept="image/gif,image/jpeg,image/png" autocomplete="off" />');
+		count ++;
+	});
+
+	// 表单上传
+	$("form").submit(function(event){
+		// 阻止默认事件
+		event.preventDefault();
+
+		// 获取表单数据formdata
+		var data = new FormData(this);
+
+		// 自己发送网络请求
+		$.post({
+			url: "/photo",
+			data: data,
+			contentType: false,// 不以(default: 'application/x-www-form-urlencoded; charset=UTF-8') 
+			processData: false,//默认情况下，通过data选项传递进来的数据，如果是一个对象(技术上讲只要不是字符串)，都会处理转化成一个查询字符串
+			success: function(resData){
+				if (resData.code == 1 ){ 
+					alert("上传成功");
+				} else{
+					alert("上传失败");
+				}
+			}
+		})
+	});
+</script>
+
+<!-- 用表单的formdata 上传数据注意事项
+     前端:
+          1. 表单一定的设置 一定得把form的enctype  置为multipart/form-data
+          2. 表单的控制name = photo 到一定的和后台的upload.array("photo") ,保持一致
+          3. 获取图片数据用formData  var data = new FormData(this);
+          4. contentType 和 processData置为false-->

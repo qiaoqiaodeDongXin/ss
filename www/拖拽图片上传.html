@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>拖拽图片上传</title>
+		<style type="text/css">
+			main{
+				border: 1px solid #ccc;
+				width: 400px;
+				height: 300px;
+				/* 弹性布局 */
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				/* 折断 */
+				flex-wrap: wrap;
+				color: #ccc;
+			}
+			
+			input{
+				border: none;
+				background-color: orange;
+				width: 100px;
+				height: 50px;
+				color: white;
+				margin: 20px;
+			}
+			
+			img{
+				width: 100px;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<span>请拖拽图片到这里</span>
+		</main>
+		<input type="button" value="上传" />
+	</body>
+</html>
+<script src="jQuery/jquery-3.2.1.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    var files = null;
+	$("main").on({
+		dragenter: function(){
+			// 调用一次
+			console.log("dragenter");
+			return false;
+		},
+		dragover: function(){
+			// 调用多次
+			console.log("dragover");
+			return false;
+		},
+		drop: function(event){
+			// 调用一次
+			console.log("drop");
+			// 从一个处理函数返回false等效于调用事件对象中的.preventDefault()和.stopPropagation()。
+			// event.preventDefault();
+			// event.stopPropagation();
+			
+			// 如果有 span，把 span 移出
+			if($("span")[0]) {$("span").remove()};
+			
+			// jQuery 对  event 事件对象做了封装（也就说 event 不再是原生 js 事件对象），它里面的某些属性发生了改变
+			// console.log(event.originalEvent.dataTransfer.files);
+			files = event.originalEvent.dataTransfer.files;
+			for (var i = 0; i < files.length; i++) {
+				if (files[i].type.startsWith("image")) {
+					$(this).append("<img src='" + URL.createObjectURL(files[0]) + "' />")
+				}else{
+					alert("您选择的不是图片，请选择图片！！");
+				}
+			}
+			return false;
+		}
+	});
+
+	// 手动上传
+	$("input").click(function(){
+		// 遍历每一个file对象
+		for (var i = 0; i <files.length; i++) {
+			var file = files[0];
+			// 创建读取文件流的对象
+			var reader = new FileReader();
+			// 读取完毕后的回调函数
+			reader.onload = function(event){
+				// 获取base64数据
+				var imgBase64Data = event.target.result;
+				// console.log(imgBase64Data);
+				// base64: 编码可用的符号a~z,A~Z,0~9,还有"+"与"/"
+				// 自行了解base64编码
+				// 去掉base64编码之后开头的标识符;data:image/png;base64
+				var index = imgBase64Data.indexOf(",")+1;
+				imgBase64Data = imgBase64Data.slice(index);
+
+				// 上传
+				$.post({
+					url: "/upload",
+					data:imgBase64Data,
+					contentType: false,
+					processData: false,
+					success: function(resData){
+			        	if (resData.code == 1 ){ 
+			        		alert("上传成功");
+			        	} else{
+			        		alert("上传失败");
+			        	}
+			        }
+				});
+			};
+			// 开始读取文件
+			reader.readAsDataURL(file);
+			// reader.readAsBinaryString(file);
+
+
+			// 注意:
+			// readAsDataURL: 是一种直接将小文件直接嵌入文档的方法,我们不能拖拽size过大的图片(不能超过800k)
+			// 如果图片过大,会报错 request entity  too large
+			// readAsBinaryString()  file           将文件二进制数据流读出
+			// readAsDataUrl()       file           将文件duchengbase64格式字符串
+			// readAsText()          file ,encoding 将文件读成一个文本
+		};
+		
+	});
+</script>
